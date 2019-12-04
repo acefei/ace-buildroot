@@ -1,0 +1,26 @@
+COMMON_DEFS := -C buildroot O=$(PWD) BR2_EXTERNAL=$(PWD)
+BUILDROOT_CONFIG := $(shell echo configs/*_defconfig)
+BUSYBOX_CONFIG := $(shell echo configs/*_busybox.config)
+KERNEL_CONFIG := $(shell echo configs/*_kernel.config)
+
+
+#############################################################################
+# buildroot targets wrapper
+#############################################################################
+
+.PHONY: menuconfig
+menuconfig:
+	$(MAKE) $(COMMON_DEFS) nconfig BR2_CONFIG=$(abspath $(BUILDROOT_CONFIG)) 
+	
+.PHONY: kernelconfig
+kernelconfig: .config
+	$(MAKE) $(COMMON_DEFS) linux-menuconfig 
+	cp build/linux-[0-9].*/.config $(KERNEL_CONFIG)
+
+.PHONY: busyboxconfig
+busyboxconfig: .config
+	$(MAKE) $(COMMON_DEFS) busybox-menuconfig 
+	cp build/busybox-[0-9].*/.config $(BUSYBOX_CONFIG)
+
+.config: $(BUILDROOT_CONFIG)
+	$(MAKE) $(COMMON_DEFS) $(<F) 

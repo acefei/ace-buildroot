@@ -1,0 +1,4 @@
+br2_external/
+*.img
+**/rootfs.tar
+output/
