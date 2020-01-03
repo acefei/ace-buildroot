@@ -40,9 +40,9 @@ $(OUTPUT_DIR)/Config.in:
 	done
 
 $(BUILDROOT_CONFIGS):
-	@mkdir -p $(OUTPUT_DIR)/configs
-	@touch $@
-	@sed 's/{external_name}/$(EXTERNAL_NAME)/g' ./configs/defconfig > $(DEFCONFIG)
+	@mkdir -p $(dir $(DEFCONFIG))
+	@bash utils/genconfig.sh $(dir $(DEFCONFIG)) $(OUTPUT_DIR)/buildroot br-external.conf
+
 
 .PHONY: clean
 clean:
@@ -73,7 +73,8 @@ inspect-img: $(BOOTABLE_IMG)
 	guestfish -a $<
 
 # start linux image with kvm out of container 
+# refer to https://github.com/buildroot/buildroot/blob/master/board/qemu/x86_64/readme.txt
 # pressing `ctrl+a x` if want to quit qemu console
 .PHONY: boot-img
 boot-img: $(BOOTABLE_IMG)
-	sudo kvm -nographic -m 1024 -hda $<
+	sudo kvm -nographic -m 1025 -hda $<

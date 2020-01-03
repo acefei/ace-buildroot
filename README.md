@@ -21,5 +21,8 @@ Highly recommend to track them with git, especially using git-lfs to store the f
 1. Use git lfs to store packages in $(BASEDIR)/dl
 2. Enable CCACHE
 
+## Known Issues
+- [BUILDROOT ip: can't find device eth0](https://stackoverflow.com/questions/33337062/buildroot-ip-cant-find-device-eth0)
+
 ## Reference 
 - [guestfs-faq](http://libguestfs.org/guestfs-faq.1.html)
