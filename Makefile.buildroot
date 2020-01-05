@@ -1,16 +1,36 @@
-COMMON_DEFS := -C buildroot O=$(PWD) BR2_EXTERNAL=$(PWD)
-BUILDROOT_CONFIG := $(shell echo configs/*_defconfig)
-BUSYBOX_CONFIG := $(shell echo configs/*_busybox.config)
+BR_EXT_PATH=$(PWD)
+# buildroot output path, pleas find details in https://buildroot.org/downloads/manual/manual.html#_building_out_of_tree
+BR_OUTPUT := $(BR_EXT_PATH)/output
+COMMON_DEFS := -C buildroot O=$(BR_OUTPUT) BR2_EXTERNAL=$(BR_EXT_PATH)
+DEFCONFIG := $(shell echo configs/*_defconfig)
 KERNEL_CONFIG := $(shell echo configs/*_kernel.config)
+BUSYBOX_CONFIG := $(shell echo configs/*_busybox.config)
+BR_CONFIGS := $(DEFCONFIG) $(KERNEL_CONFIG) $(BUSYBOX_CONFIG)
 
+ROOTFS_TAR := $(BR_OUTPUT)/images/rootfs.tar
+DISK_IMG := images/disk.img
+
+.PHONY: all
+all: $(DISK_IMG) 
+
+$(DISK_IMG): $(ROOTFS_TAR)
+	@mkdir -p $(@D)
+	sh $(SH_VERBOSE) scripts/genimage.sh $@ $(BR_OUTPUT)
+
+$(ROOTFS_TAR): .config
+	$(MAKE) $(COMMON_DEFS)
+
+.PHONY: clean
+clean:
+	$(MAKE) $(COMMON_DEFS) $@
 
 #############################################################################
 # buildroot targets wrapper
 #############################################################################
 
 .PHONY: menuconfig
-menuconfig:
-	$(MAKE) $(COMMON_DEFS) nconfig BR2_CONFIG=$(abspath $(BUILDROOT_CONFIG)) 
+menuconfig: 
+	$(MAKE) $(COMMON_DEFS) nconfig BR2_CONFIG=$(abspath $(DEFCONFIG)) 
 	
 .PHONY: kernelconfig
 kernelconfig: .config
@@ -22,5 +42,5 @@ busyboxconfig: .config
 	$(MAKE) $(COMMON_DEFS) busybox-menuconfig 
 	cp build/busybox-[0-9].*/.config $(BUSYBOX_CONFIG)
 
-.config: $(BUILDROOT_CONFIG)
+.config: $(BR_CONFIGS)
 	$(MAKE) $(COMMON_DEFS) $(<F) 

@@ -1,12 +1,27 @@
-#!/bin/bash
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE: genimage.sh
+# 
+#         USAGE: ./genimage.sh <disk_img> <br_output_dir>
+# 
+#   DESCRIPTION: Generate a disk image that can boot up via qemu
+#                This script is inspired by https://github.com/buildroot/buildroot/blob/master/boot/grub2/readme.txt
+# 
+#       OPTIONS: 
+#                disk_img: disk image for qemu
+#                br_output_dir: buildroot output directory
+#
+#        AUTHOR: acefei (), acefei@163.com
+#       CREATED: 01/05/2020 05:07
+#      REVISION:  ---
+#===============================================================================
 
+set -o nounset                              # Treat unset variables as an error
 set -e
-# This script is inspired by https://github.com/buildroot/buildroot/blob/master/boot/grub2/readme.txt
 
-# output
-bootable_img=$(realpath "$1")
-# input: absolute path for rootfs.tar 
-root_tar=$(realpath "$2")
+disk_img=$(realpath "$1")
+br_output_dir=$(realpath "$2")
 
 setup=$(mktemp -dt "$(basename "$0").XXXXXXXXXX")
 teardown(){
@@ -19,16 +34,16 @@ teardown(){
     # exit with original exit code
     if [ $exit_code -eq 0 ];then
         echo
-        echo "$bootable_img is available."
+        echo "$disk_img is available."
     else
-        rm -rf $bootable_img
+        rm -rf $disk_img
         exit $exit_code
     fi
 }
 trap teardown EXIT 
 
-# Buildroot output directory
-br_output_dir=$(cd $(dirname "$root_tar")/../; pwd)
+root_tar=$br_output_dir/images/rootfs.tar
+# the paths relative to $br_output_dir
 grub_bios_setup=./host/sbin/grub-bios-setup
 grub_boot_img=./host/lib/grub/i386-pc/boot.img
 grub_img=./images/grub.img
@@ -63,11 +78,12 @@ create_grub_cfg() {
     # based on https://github.com/buildroot/buildroot/blob/master/boot/grub2/grub.cfg
     cat > $grub_cfg <<EOF
 set default="0"
-set timeout="5"
+set timeout="3"
+set timeout_style="hidden"
 
 menuentry "Buildroot" {
     set root="(hd0,gpt3)"
-    linux /boot/bzImage ro root=PARTUUID=$rootfs_uuid quiet oops=panic console=tty0 console=ttyS0
+    linux /boot/bzImage root=PARTUUID=$rootfs_uuid console=tty0 console=ttyS0
 }
 EOF
 }
@@ -86,10 +102,10 @@ create_empty_image() {
     
     # create empty image disk
     # equal to `dd if=/dev/zero of=<image_path> bs=<block_size> count=<block_num>`, image_size = block_size * block_num
-    truncate -s "$image_size" "$bootable_img"
+    truncate -s "$image_size" "$disk_img"
     
     # create and populate partitions
-    guestfish -a "$bootable_img" <<EOF
+    guestfish -a "$disk_img" <<EOF
 run
 part-init /dev/sda gpt
 part-add /dev/sda p $part_start $((part_start+grub_size))
@@ -117,7 +133,7 @@ EOF
 # run as subshell with trap
 install_grub2() (
     # Setup loop device and loop partitions
-    loopdev=$(sudo losetup -P --show -f "$bootable_img")
+    loopdev=$(sudo losetup -P --show -f "$disk_img")
 
     # Install Grub2
     trap 'sudo losetup -d $loopdev' EXIT
@@ -126,7 +142,7 @@ install_grub2() (
     trap - EXIT
 
     # Display the current partition table
-    sgdisk -p "$bootable_img"
+    sgdisk -p "$disk_img"
 )
 
 main() {

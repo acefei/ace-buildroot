@@ -6,8 +6,8 @@ DEFCONFIG := $(OUTPUT_DIR)/configs/$(EXTERNAL_NAME)_defconfig
 BUSYBOX_CONFIG := $(OUTPUT_DIR)/configs/$(EXTERNAL_NAME)_busybox.config
 KERNEL_CONFIG := $(OUTPUT_DIR)/configs/$(EXTERNAL_NAME)_kernel.config
 BUILDROOT_CONFIGS := $(DEFCONFIG) $(KERNEL_CONFIG) $(BUSYBOX_CONFIG)
+BR_EXTERNAL_FILES := $(OUTPUT_DIR)/external.desc $(OUTPUT_DIR)/external.mk $(OUTPUT_DIR)/Config.in $(OUTPUT_DIR)/scripts/genimage.sh
 
-BOOTABLE_IMG := $(PWD)/bootable.img
 ARGS4LOSETUP := -v /dev/mapper:/dev/mapper --privileged
 
 #############################################################################
@@ -16,13 +16,24 @@ ARGS4LOSETUP := -v /dev/mapper:/dev/mapper --privileged
 .PHONY: all
 all: buildroot external_init
 
+.PHONY: buildroot
+buildroot:
+	@mkdir -p $(OUTPUT_DIR)
+	@rm -rf $(OUTPUT_DIR)/buildroot || :
+	@git clone -q -b $(BR2_VERSION) --depth 1 $(BR2_GIT_URL) $(OUTPUT_DIR)/buildroot 2>/dev/null
+
 # More details for external, please refer to https://buildroot.org/downloads/manual/manual.html#customize
 .PHONY: external_init
-external_init: $(OUTPUT_DIR)/external.desc $(OUTPUT_DIR)/external.mk $(OUTPUT_DIR)/Config.in $(BUILDROOT_CONFIGS)
+external_init: $(BR_EXTERNAL_FILES) genconfig
 # Generate buildroot make wrapper
 	@cp Makefile.buildroot $(OUTPUT_DIR)/Makefile
-	@echo "Enjoy your buildroot journey in $(OUTPUT_DIR)"
-	@echo "Have Fun!"
+	@echo "Get start with following instructions:"
+	@echo "1. Run 'make build-container' to enter dev environment"
+	@echo "2. Run 'make menuconfig' for buildroot config"
+	@echo "3. Run 'make kernelconfig' for kernel config"
+	@echo "4. Run 'make busyboxconfig' for busybox config"
+	@echo "5. Run 'make' to build a disk image for booting up by qemu/kvm"
+	@echo "Enjoy your buildroot journey! Have Fun!"
 
 $(OUTPUT_DIR)/external.desc:
 	@echo "name: $(EXTERNAL_NAME)" > $@
@@ -39,10 +50,15 @@ $(OUTPUT_DIR)/Config.in:
 		echo "source \"\$$$(BR2_EXTERNAL_PATH_NAME)/package/$$package/Config.in\"" >> $@; \
 	done
 
-$(BUILDROOT_CONFIGS):
-	@mkdir -p $(dir $(DEFCONFIG))
-	@bash utils/genconfig.sh $(dir $(DEFCONFIG)) $(OUTPUT_DIR)/buildroot br-external.conf
+$(OUTPUT_DIR)/scripts/genimage.sh:
+	@mkdir -p $(@D)
+	@cp utils/genimage.sh $(@D)
 
+.PHONY: genconfig
+genconfig:
+	@mkdir -p $(dir $(DEFCONFIG))
+	@bash $(SH_VERBOSE) utils/genconfig.sh $(dir $(DEFCONFIG)) $(OUTPUT_DIR)/buildroot br-external.conf
+	@ls $(BUILDROOT_CONFIGS) > /dev/null
 
 .PHONY: clean
 clean:
@@ -57,24 +73,9 @@ build-container: docker/Dockerfile
 	docker build -t $(EXTERNAL_NAME)  $(<D)
 	docker run --rm -it -v $(OUTPUT_DIR):/build $(ARGS4LOSETUP) -w /build -t $(EXTERNAL_NAME):latest bash
 
-.PHONY: buildroot
-buildroot:
-	@mkdir -p $(OUTPUT_DIR)
-	@rm -rf $(OUTPUT_DIR)/buildroot || :
-	@git clone -q -b $(BR2_VERSION) --depth 1 $(BR2_GIT_URL) $(OUTPUT_DIR)/buildroot 2>/dev/null
-
-.PHONY: bootable-img
-bootable-img: $(BOOTABLE_IMG)
-$(BOOTABLE_IMG): output/images/rootfs.tar
-	@bash utils/create_bootable_img.sh $@ $<
-
-.PHONY: inspect-img
-inspect-img: $(BOOTABLE_IMG)
-	guestfish -a $<
-
 # start linux image with kvm out of container 
 # refer to https://github.com/buildroot/buildroot/blob/master/board/qemu/x86_64/readme.txt
 # pressing `ctrl+a x` if want to quit qemu console
 .PHONY: boot-img
-boot-img: $(BOOTABLE_IMG)
-	sudo kvm -nographic -m 1025 -hda $<
+boot-img: 
+	sudo kvm -nographic -m 1025 -hda $(OUTPUT_DIR)/images/disk.img
