@@ -24,15 +24,15 @@ linux_config_dest=$output_path/${ext_name}_kernel.config
 busybox_config_dest=$output_path/${ext_name}_busybox.config
 
 
-set_vars ()
+set_var ()
 {
     local var=$1
     local value=$2
     local cfg=${3:-$defconfig_dest}
 
-    grep -q "$var" $cfg && sed -i '/\('$var'\)/d' $cfg
+    sed -i '/\('$var'\)/d' $cfg
     echo "$var=$value" >> $cfg
-}	# ----------  end of function set_vars  ----------
+}	# ----------  end of function set_var  ----------
 
 set_defconfig ()
 {
@@ -49,16 +49,22 @@ set_defconfig ()
     # Update defconfigs on demand
     #-------------------------------------------------------------------------------
     printf "\n# Build rootfs.tar\n" >> $defconfig_dest
-    set_vars BR2_TARGET_ROOTFS_TAR y 
+    set_var BR2_TARGET_ROOTFS_TAR y 
 
     printf "\n# Re-store dl on BASE_DIR for local build (might push tarballs to git lfs)\n" >> $defconfig_dest
-    set_vars BR2_DL_DIR '"$(BASE_DIR)/dl"'
+    set_var BR2_DL_DIR '"$(BASE_DIR)/dl"'
 
     printf "\n# Toolchain, required for grub2\n" >> $defconfig_dest
-    set_vars BR2_TOOLCHAIN_BUILDROOT_WCHAR y
+    set_var BR2_TOOLCHAIN_BUILDROOT_WCHAR y
 
     printf "\n# Bootloader\n" >> $defconfig_dest
-    set_vars BR2_TARGET_GRUB2 y
+    set_var BR2_TARGET_GRUB2 y
+    # Find help of the Grub 2 option in https://git.buildroot.net/buildroot/tree/boot/grub2/Config.in#n83
+    # grub.cfg is located on 'hd0,gpt2' in utils/genimage.sh
+    set_var BR2_TARGET_GRUB2_BOOT_PARTITION '"hd0,gpt2"'
+
+    printf "\n# Install bzImage to /boot in target \n" >> $defconfig_dest
+    set_var BR2_LINUX_KERNEL_INSTALL_TARGET y
 
     # make ROOT_PWD=xxxx
     if [ -n "$ROOT_PWD" ];then
@@ -66,8 +72,8 @@ set_defconfig ()
         # sed output is used in makefile
         salted_pwd=$(openssl passwd -5 -salt $(openssl rand -base64 8) $ROOT_PWD | sed 's/\$/\$\$/g')
         printf "\n# Root login with password \n" >> $defconfig_dest
-        set_vars BR2_TARGET_ENABLE_ROOT_LOGIN y
-        set_vars BR2_TARGET_GENERIC_ROOT_PASSWD '"$$5$$euisDgfHjF8=$$pGUnBPGIO5dNP1zw/HZSmQ0ODFCklsS2gNOSUJwxRY6"'
+        set_var BR2_TARGET_ENABLE_ROOT_LOGIN y
+        set_var BR2_TARGET_GENERIC_ROOT_PASSWD "\"$salted_pwd\""
     fi
 }	# ----------  end of function set_defconfig  ----------
 

@@ -51,7 +51,7 @@ grub_img=./images/grub.img
 #grub_env=grubenv
 grub_cfg=grub.cfg
 
-# https://en.wikipedia.org/wiki/GUID_Partition_Table
+# https://en.wikipedia.org/wiki/BIOS_boot_partition
 bios_guid=21686148-6449-6E6F-744E-656564454649
 rootfs_uuid=$(cat /proc/sys/kernel/random/uuid)
 

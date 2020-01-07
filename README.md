@@ -26,3 +26,8 @@ Highly recommend to track them with git, especially using git-lfs to store the f
 
 ## Reference 
 - [guestfs-faq](http://libguestfs.org/guestfs-faq.1.html)
+- [Notes on using Grub2 for ARM u-boot-based platforms](https://github.com/buildroot/buildroot/tree/master/boot/grub2)
+  - Enable "Install kernel image to /boot in target" in the kernel menu to populate a /boot directory with bzImage/zImage
+- [BIOS boot partition](https://en.wikipedia.org/wiki/BIOS_boot_partition)
+- [Why does the partition start on sector 2048 instead of 63?](https://superuser.com/questions/352572/why-does-the-partition-start-on-sector-2048-instead-of-63)
+
