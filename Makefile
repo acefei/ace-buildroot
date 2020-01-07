@@ -78,4 +78,4 @@ build-container: docker/Dockerfile
 # pressing `ctrl+a x` if want to quit qemu console
 .PHONY: boot-img
 boot-img: 
-	sudo kvm -nographic -m 1025 -hda $(OUTPUT_DIR)/images/disk.img
+	sudo kvm -nographic -hda $(OUTPUT_DIR)/images/disk.img -net nic,model=virtio -net user
