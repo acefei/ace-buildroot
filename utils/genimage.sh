@@ -83,7 +83,7 @@ set timeout_style="hidden"
 
 menuentry "Buildroot" {
     set root="(hd0,gpt3)"
-    linux /boot/bzImage root=PARTUUID=$rootfs_uuid console=tty0 console=ttyS0
+    linux /boot/bzImage root=PARTUUID=$rootfs_uuid console=ttyS0
 }
 EOF
 }
@@ -139,7 +139,6 @@ install_grub2() (
     trap 'sudo losetup -d $loopdev' EXIT
     cd $br_output_dir
     sudo $grub_bios_setup -b $grub_boot_img -c $grub_img -d . "$loopdev"
-    trap - EXIT
 
     # Display the current partition table
     sgdisk -p "$disk_img"

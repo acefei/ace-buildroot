@@ -49,7 +49,7 @@ set_defconfig ()
     # Update defconfigs on demand
     #-------------------------------------------------------------------------------
     printf "\n# Build rootfs.tar\n" >> $defconfig_dest
-    set_var BR2_TARGET_ROOTFS_TAR y 
+    set_var BR2_TARGET_ROOTFS_TAR y
 
     printf "\n# Re-store dl on BASE_DIR for local build (might push tarballs to git lfs)\n" >> $defconfig_dest
     set_var BR2_DL_DIR '"$(BASE_DIR)/dl"'
@@ -63,8 +63,11 @@ set_defconfig ()
     # grub.cfg is located on 'hd0,gpt2' in utils/genimage.sh
     set_var BR2_TARGET_GRUB2_BOOT_PARTITION '"hd0,gpt2"'
 
-    printf "\n# Install bzImage to /boot in target \n" >> $defconfig_dest
+    printf "\n# Install bzImage to /boot in target\n" >> $defconfig_dest
     set_var BR2_LINUX_KERNEL_INSTALL_TARGET y
+
+    printf "\n# Change tty1 to ttyS0 for using QEMU nographic option\n" >> $defconfig_dest
+    set_var BR2_TARGET_GENERIC_GETTY_PORT '"ttyS0"'
 
     # make ROOT_PWD=xxxx
     if [ -n "$ROOT_PWD" ];then

@@ -23,11 +23,13 @@ Highly recommend to track them with git, especially using git-lfs to store the f
 
 ## Known Issues
 - [BUILDROOT ip: can't find device eth0](https://stackoverflow.com/questions/33337062/buildroot-ip-cant-find-device-eth0)
+- Can't find buildroot login prompt using qemu 
+  - Use qemu_x86_defconfig for qemu-system-i386. Change tty1 to ttyS0 for using QEMU nographic option, refer to [Build buildroot and run QEMU](https://www.hiroom1.com/2016/05/20/ubuntu-16-04-build-buildroot-and-run-qemu/)
+- '/boot/bzImage' not found when qemu booting up.
+  - Enable "Install kernel image to /boot in target" in the kernel menu to populate a /boot directory with bzImage, refer to [Notes on using Grub2 for ARM u-boot-based platforms](https://github.com/buildroot/buildroot/tree/master/boot/grub2)
 
 ## Reference 
 - [guestfs-faq](http://libguestfs.org/guestfs-faq.1.html)
-- [Notes on using Grub2 for ARM u-boot-based platforms](https://github.com/buildroot/buildroot/tree/master/boot/grub2)
-  - Enable "Install kernel image to /boot in target" in the kernel menu to populate a /boot directory with bzImage/zImage
 - [BIOS boot partition](https://en.wikipedia.org/wiki/BIOS_boot_partition)
 - [Why does the partition start on sector 2048 instead of 63?](https://superuser.com/questions/352572/why-does-the-partition-start-on-sector-2048-instead-of-63)
-
+- [How to Setup QEMU Output to Console and Automate Using Shell Script](https://fadeevab.com/how-to-setup-qemu-output-to-console-and-automate-using-shell-script/)
